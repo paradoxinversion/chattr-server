@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-const setup = async testing => {
+const setup =  async () => {
   await mongoose.connect(
-    `mongodb://localhost/${testing ? "chattr-test" : "chattr"}`,
+    `mongodb://mongo:27017/chatter}`,
     { useNewUrlParser: true, useUnifiedTopology: true }
   );
   const db = mongoose.connection;

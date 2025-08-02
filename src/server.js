@@ -349,6 +349,15 @@ io.on("connection", function(socket) {
 });
 
 app.post(`/chattr/sign-in`, async (req, res) => {
+  const {username, password} = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required." });
+  }
+  if (req.body.password.length < 4) {
+    return res
+      .status(400)
+      .json({ error: "Passwords must be at least four characters." });
+  }
   const user = await User.findOne({ username: req.body.username });
   if (user && (await user.checkPassword(req.body.password))) {
     if (!user.activated)
@@ -373,8 +382,13 @@ app.post(`/chattr/sign-up`, async (req, res) => {
       .status(400)
       .json({ error: "Passwords must be at least four characters." });
   }
-  await userActions.createUser(req.body);
-  res.status(200).json({ signup: "success" });
+  try {
+    await userActions.createUser(req.body);
+
+  } catch (error) {
+    return res.status(409).json({ error: "user exists" });
+  }
+  res.status(201).json({ signup: "success" });
 });
 
 app.get(`/chattr/check-auth`, async (req, res) => {
@@ -499,6 +513,10 @@ app.get(`/chattr/logout`, async (req, res) => {
   } else {
     return res.status(401).json({ error: "Request missing access token" });
   }
+});
+
+app.get(`/chattr/health`, async (req, res) => {
+  return res.status(200).json({ status: "ok" });
 });
 
 app.post(`/chattr/update-password`, async (req, res) => {
