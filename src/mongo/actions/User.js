@@ -1,5 +1,5 @@
-const User = require("../models/User");
-const bcrypt = require("bcrypt");
+import User from "../models/User.js";
+import bcrypt from "bcrypt";
 
 /**
  * Creates a new user with the provided name and password,
@@ -269,7 +269,7 @@ const deleteUser = async (userId) => {
 const getUsernameFromId = async (userId) => {
   return await User.findById(userId).select("username").lean();
 };
-module.exports = {
+export default {
   createUser,
   readUser,
   addUserToBlockList,

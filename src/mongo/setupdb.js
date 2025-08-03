@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const setup =  async () => {
   await mongoose.connect(
@@ -11,4 +11,4 @@ const setup =  async () => {
   return { db, mongoose };
 };
 
-module.exports = setup;
+export default setup;

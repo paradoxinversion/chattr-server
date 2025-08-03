@@ -1,14 +1,18 @@
-const environment = process.env.NODE_ENV;
-const config = require("./config/config").getConfig();
-const app = require("express")();
-const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
-const http = require("http").createServer(app);
-const setupdb = require("./mongo/setupdb");
-const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
-const jdenticon = require("jdenticon");
-const {Server} = require("socket.io");
+import AppConfig from "./config/config.js";
+const config = AppConfig.getConfig();
+import express from "express";
+const app = express();
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+import httpServer from "http";
+const http = httpServer.createServer(app);
+
+import setupdb from "./mongo/setupdb.js";
+import passport from "passport";
+import passportLocal from "passport-local";
+const LocalStrategy = passportLocal.Strategy;
+import jdenticon from "jdenticon";
+import { Server } from "socket.io";
 const io = new Server(http, {
   cors: {
     origin: "http://localhost:5173",
@@ -27,8 +31,10 @@ const io = new Server(http, {
     // maxAge: 86400
   }
 });
-const userActions = require("./mongo/actions/User");
-const User = require("./mongo/models/User");
+// const userActions = require("./mongo/actions/User");
+import userActions from "./mongo/actions/User.js";
+// const User = require("./mongo/models/User");
+import User from "./mongo/models/User.js";
 // io.origins("*:*");s
 
 // CORS is set in nginx in production
@@ -36,7 +42,7 @@ const User = require("./mongo/models/User");
 //   const cors = require("cors");
 //   app.use(cors({ origin: "*:*", credentials: true }));
 // }
-const cors = require("cors");
+import cors from "cors";
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 const database = setupdb(false);
 passport.use(
@@ -64,7 +70,7 @@ passport.deserializeUser(async function(id, done) {
 
 app.use(passport.initialize());
 app.use(cookieParser());
-app.use(require("express").json());
+app.use(express.json());
 
 let chatClients = [];
 let chatHistory = [];
@@ -630,8 +636,8 @@ app.post(`/chattr/confirm-user`, async (req, res) => {
     return res.status(401).json({ error: "Request missing access token" });
   }
 });
-http.listen(config.server.port, async function() {
-  console.log(`Listening on port ${config.server.port}`);
+http.listen(3001, async function() {
+  console.log(`Listening on port ${3001}`);
   const admin = await User.findOne({ role: 2 });
   if (!admin) {
     console.log(

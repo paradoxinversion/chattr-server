@@ -1,6 +1,6 @@
-const path = require("path");
-
-module.exports = (() => {
+import path from "path";
+import dotenv from "dotenv";
+export default (() => {
   let config = {};
 
   /**
@@ -17,9 +17,9 @@ module.exports = (() => {
    */
   const makeConfig = () => {
     if (getEnv() === "development") {
-      require("dotenv").config();
+      dotenv.config();
     } else if (getEnv() === "production") {
-      require("dotenv").config({
+      dotenv.config({
         path: path.resolve(process.cwd(), ".env.production")
       });
     }

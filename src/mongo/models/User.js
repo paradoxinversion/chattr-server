@@ -1,5 +1,6 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+// const bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
 /***
  * ROLES:
@@ -32,4 +33,4 @@ UserSchema.methods.checkPassword = async function (password) {
 };
 
 const User = mongoose.model("User", UserSchema);
-module.exports = User;
+export default User;
