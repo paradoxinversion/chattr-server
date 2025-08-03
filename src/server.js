@@ -8,19 +8,36 @@ const setupdb = require("./mongo/setupdb");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const jdenticon = require("jdenticon");
-const io = require("socket.io")(http, {
-  cookie: false
+const {Server} = require("socket.io");
+const io = new Server(http, {
+  cors: {
+    origin: "http://localhost:5173",
+  },
+  connectionStateRecovery: {
+    // the backup duration of the sessions and the packets
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    // whether to skip middlewares upon successful recovery
+    skipMiddlewares: true,
+  },
+  cookie: {
+    name: "chattr-session",
+    path: "/",
+    // httpOnly: true,
+    sameSite: "lax",
+    // maxAge: 86400
+  }
 });
 const userActions = require("./mongo/actions/User");
 const User = require("./mongo/models/User");
-io.origins("*:*");
+// io.origins("*:*");s
 
 // CORS is set in nginx in production
-if (environment !== "production") {
-  const cors = require("cors");
-  app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-}
-
+// if (environment !== "production") {
+//   const cors = require("cors");
+//   app.use(cors({ origin: "*:*", credentials: true }));
+// }
+const cors = require("cors");
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 const database = setupdb(false);
 passport.use(
   new LocalStrategy(async function(username, password, done) {
@@ -77,9 +94,10 @@ const addChatClient = (client, user) => {
   let clientExists = false;
   for (let x = 0; x < chatClients.length; x++) {
     const chatClient = chatClients[x];
-    if (chatClient.id === client.id) client = true;
+    if (chatClient.user.iid === user.iid) {
+      removeChatClient(chatClient.id)
+    }
   }
-
   // If none exists yet, add it
   if (!clientExists) {
     client.user = createUser(client.id, user);
@@ -146,7 +164,10 @@ io.use(async (socket, next) => {
 
 io.on("connection", function(socket) {
   addChatClient(socket.client, socket.user);
-
+  socket.on("disconnect", function(socket) {
+    console.log("User disconnected: ", socket);
+    // removeChatClient(socket.client.id);
+  });
   // socket.emit("user-connected", {
   //   user: socket.client.user,
   //   chatHistory: chatHistory.map(entry => {
@@ -360,10 +381,11 @@ app.post(`/chattr/sign-in`, async (req, res) => {
   }
   const user = await User.findOne({ username: req.body.username });
   if (user && (await user.checkPassword(req.body.password))) {
-    if (!user.activated)
+    if (!user.activated) {
       return res
         .status(403)
         .json({ error: "Your account has not yet been activated." });
+    }
     const token = jwt.sign(
       {
         user: user.id
@@ -383,12 +405,11 @@ app.post(`/chattr/sign-up`, async (req, res) => {
       .json({ error: "Passwords must be at least four characters." });
   }
   try {
-    await userActions.createUser(req.body);
-
+    const user = await userActions.createUser(req.body);
+    res.status(201).json({ signup: "success", user });
   } catch (error) {
     return res.status(409).json({ error: "user exists" });
   }
-  res.status(201).json({ signup: "success" });
 });
 
 app.get(`/chattr/check-auth`, async (req, res) => {
@@ -434,6 +455,8 @@ app.get("/chattr/banned-users", async (req, res) => {
 });
 
 app.get("/chattr/users", async (req, res) => {
+  console.log("Getting users");
+  console.log(req.headers);
   const token = req.headers.bearer;
   if (token) {
     try {
